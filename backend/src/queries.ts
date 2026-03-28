@@ -89,7 +89,7 @@ export function loginUser(tableName: string) {
 
         // Fetch user record by username only; verify bcrypt hash separately.
         db.query(
-            `SELECT id, username, password FROM ${tableName} WHERE username = ? LIMIT 1`,
+            `SELECT user_id, username, password FROM ${tableName} WHERE username = ? LIMIT 1`,
             [username],
             async (error: QueryError | null, results: any[]) => {
                 if (error) {
