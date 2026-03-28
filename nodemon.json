@@ -1,0 +1,8 @@
+{
+  "watch": ["backend"],
+  "ext": "ts",
+  "exec": "ts-node backend/src/app.ts",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
