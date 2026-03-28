@@ -5,6 +5,21 @@
       <!-- Header -->
       <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
         <h1 class="text-3xl font-bold text-gray-900 mb-6">Workout Calendar</h1>
+        
+        <!-- Date Search -->
+        <div class="mb-6 flex gap-2">
+          <input 
+            type="date"
+            [ngModel]="searchDateInput()"
+            (ngModelChange)="searchDateInput.set($event)"
+            placeholder="Search date (YYYY-MM-DD)"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button 
+            (click)="searchDate()"
+            class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md cursor-pointer transition">
+            Go to Date
+          </button>
+        </div>
       
       <!-- Month Navigation -->
       <div class="flex items-center justify-between mb-8">
@@ -14,9 +29,16 @@
           ← Previous
         </button>
         
-        <h2 class="text-2xl font-semibold text-gray-900">
-          {{ monthName() }} {{ currentYear() }}
-        </h2>
+        <div class="flex items-center gap-4">
+          <h2 class="text-2xl font-semibold text-gray-900">
+            {{ monthName() }} {{ currentYear() }}
+          </h2>
+          <button 
+            (click)="goToToday()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md cursor-pointer transition">
+            Today
+          </button>
+        </div>
         
         <button 
           (click)="nextMonth()"
@@ -91,6 +113,20 @@
                   @if (day.isToday) {
                     <div class="flex justify-center">
                       <div class="w-1 h-1 bg-indigo-600 rounded-full"></div>
+                    </div>
+                  }
+                  
+                  <!-- Bookmark Button and Indicator -->
+                  @if (day.isCurrentMonth && day.hasWorkout) {
+                    <div class="flex justify-center mt-2">
+                      <button 
+                        (click)="toggleBookmark(day); $event.stopPropagation()"
+                        [class.text-yellow-500]="day.isBookmarked"
+                        [class.text-gray-400]="!day.isBookmarked"
+                        class="text-lg hover:text-yellow-500 transition"
+                        [title]="day.isBookmarked ? 'Remove bookmark' : 'Add bookmark'">
+                        ★
+                      </button>
                     </div>
                   }
                 </div>

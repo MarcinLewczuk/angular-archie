@@ -2,7 +2,13 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       <div class="flex items-center gap-6 cursor-pointer" routerLink="/">
-        <span class="text-xl font-bold text-indigo-600 hover:text-indigo-700">Archie Workouts</span>
+        <svg width="32" height="34" viewBox="0 0 649 688" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8">
+          <path d="M649 342.5L160.5 687.5L257.5 558.5L62.5 519.5H348.5L401 426.5L488 342.5L461.5 319.5L505 242L649 342.5ZM400 166.5H56.5L260.5 123C228.667 82.3333 164.8 0.8 164 0L400 166.5Z" fill="#84251D"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M0 488.5H217.5L321 303H180.5L241.5 194H164L0 488.5ZM212 361L172 432.5H107.5L147 361H212Z" fill="#84251D"/>
+          <path d="M282.5 194C269.333 219.333 242.8 270.2 242 271L284 253.5H387.5L259 488H331.5L498 194H282.5Z" fill="#84251D"/>
+          <path d="M160.5 687.5L258 558.5L62.5 519.5H346.5L160.5 687.5ZM351 516L401 426.5L487.5 343H561L351 516ZM186.5 224L54 460L0 488.5L164 194H241.5L186.5 224ZM313.5 460L259.5 488L387.5 253.5L444 226L313.5 460ZM268.316 331.329L195 463.5L54.5 461.5L109 432.5H172L212.5 361L267.566 331.5H127L179.5 303H321L268.316 331.329ZM649 343H561L484 279.5L505 242L649 343ZM444.5 225.5L299.5 225L280.5 245.5L242 271L282.5 194H498L444.5 225.5ZM400 166.5H354L191 19.0004L400 166.5Z" fill="#CB3626"/>
+        </svg>
+        <span class="text-lg font-bold text-transparent bg-linear-to-r from-red-700 to-red-600 bg-clip-text hidden sm:block">Archie</span>
       </div>
       <nav class="flex items-center gap-4">
         @if (auth.isAuthenticated()) {
