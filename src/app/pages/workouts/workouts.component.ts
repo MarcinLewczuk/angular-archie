@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/AuthService';
 import { WorkoutService } from '../../services/WorkoutService';
@@ -12,12 +13,13 @@ interface WorkoutDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   muscleGroups: string[];
+  isBookmarked: boolean;
 }
 
 @Component({
   selector: 'app-workouts',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './workouts.component.html',
   styleUrls: ['./workouts.component.css']
 })
@@ -33,6 +35,9 @@ export class WorkoutsComponent implements OnInit {
   weeks = signal<WorkoutDay[][]>([]);
   private hasLoadedWorkouts = false;
   
+  searchDateInput = signal('');
+  bookmarkedDates = signal<Set<string>>(new Set());
+  
   monthName = computed(() => {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                    'July', 'August', 'September', 'October', 'November', 'December'];
@@ -40,6 +45,7 @@ export class WorkoutsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadBookmarks();
     this.generateCalendar();
     this.loadWorkoutData();
     
@@ -49,6 +55,89 @@ export class WorkoutsComponent implements OnInit {
         this.loadWorkoutData();
       }
     }, 500);
+  }
+
+  private loadBookmarks(): void {
+    const stored = localStorage.getItem('bookmarked_dates');
+    if (stored) {
+      try {
+        const dates = JSON.parse(stored);
+        this.bookmarkedDates.set(new Set(dates));
+      } catch {
+        this.bookmarkedDates.set(new Set());
+      }
+    }
+  }
+
+  private saveBookmarks(): void {
+    localStorage.setItem('bookmarked_dates', JSON.stringify(Array.from(this.bookmarkedDates())));
+  }
+
+  goToToday(): void {
+    const today = new Date();
+    this.currentMonth.set(today.getMonth());
+    this.currentYear.set(today.getFullYear());
+    this.generateCalendar();
+    this.loadWorkoutData();
+  }
+
+  searchDate(): void {
+    const dateStr = this.searchDateInput().trim();
+    if (!dateStr) return;
+
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        alert('Invalid date format. Please use YYYY-MM-DD or a standard date format.');
+        return;
+      }
+
+      this.currentMonth.set(date.getMonth());
+      this.currentYear.set(date.getFullYear());
+      this.searchDateInput.set('');
+      this.generateCalendar();
+      this.loadWorkoutData();
+    } catch (e) {
+      alert('Invalid date format. Please use YYYY-MM-DD or a standard date format.');
+    }
+  }
+
+  toggleBookmark(workoutDay: WorkoutDay): void {
+    if (!workoutDay.isCurrentMonth || !workoutDay.hasWorkout) return;
+
+    const dateKey = this.getDateKey(workoutDay.date);
+    const bookmarked = this.bookmarkedDates();
+    
+    if (bookmarked.has(dateKey)) {
+      bookmarked.delete(dateKey);
+    } else {
+      bookmarked.add(dateKey);
+    }
+    
+    this.bookmarkedDates.set(new Set(bookmarked));
+    this.saveBookmarks();
+    
+    // Update the weeks to reflect bookmark change
+    const updatedWeeks = this.weeks().map(week =>
+      week.map(day => {
+        if (this.isSameDay(day.date, workoutDay.date)) {
+          return { ...day, isBookmarked: !day.isBookmarked };
+        }
+        return day;
+      })
+    );
+    this.weeks.set(updatedWeeks);
+  }
+
+  private getDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private isBookmarked(date: Date): boolean {
+    return this.bookmarkedDates().has(this.getDateKey(date));
   }
 
   generateCalendar(): void {
@@ -79,7 +168,8 @@ export class WorkoutsComponent implements OnInit {
         hasWorkout: false,
         isCurrentMonth: false,
         isToday: this.isToday(date),
-        muscleGroups: []
+        muscleGroups: [],
+        isBookmarked: this.isBookmarked(date)
       });
     }
     
@@ -93,7 +183,8 @@ export class WorkoutsComponent implements OnInit {
         hasWorkout: false,
         isCurrentMonth: true,
         isToday: this.isToday(date),
-        muscleGroups: []
+        muscleGroups: [],
+        isBookmarked: this.isBookmarked(date)
       });
       
       if (week.length === 7) {
@@ -113,7 +204,8 @@ export class WorkoutsComponent implements OnInit {
         hasWorkout: false,
         isCurrentMonth: false,
         isToday: this.isToday(date),
-        muscleGroups: []
+        muscleGroups: [],
+        isBookmarked: this.isBookmarked(date)
       });
       nextDay++;
     }
