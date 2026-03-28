@@ -1,0 +1,116 @@
+<div class="page-wrapper min-h-screen bg-gray-50 p-6">
+  <main class="max-w-6xl mx-auto">
+    @if (auth.isAuthenticated()) {
+      <!-- Calendar View for Authenticated Users -->
+      <!-- Header -->
+      <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Workout Calendar</h1>
+      
+      <!-- Month Navigation -->
+      <div class="flex items-center justify-between mb-8">
+        <button 
+          (click)="previousMonth()"
+          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md cursor-pointer">
+          ← Previous
+        </button>
+        
+        <h2 class="text-2xl font-semibold text-gray-900">
+          {{ monthName() }} {{ currentYear() }}
+        </h2>
+        
+        <button 
+          (click)="nextMonth()"
+          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md cursor-pointer">
+          Next →
+        </button>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <!-- Day Headers -->
+          <thead>
+            <tr>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Sun</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Mon</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Tue</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Wed</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Thu</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Fri</th>
+              <th class="p-3 bg-gray-100 text-gray-900 font-semibold text-center">Sat</th>
+            </tr>
+          </thead>
+          
+          <!-- Calendar Days -->
+          <tbody>
+            <tr *ngFor="let week of weeks">
+              <td 
+                *ngFor="let day of week"
+                [class.bg-gray-50]="!day.isCurrentMonth"
+                [class.bg-white]="day.isCurrentMonth"
+                [class.bg-indigo-50]="day.isToday"
+                class="border border-gray-200 p-3 h-24 align-top cursor-pointer hover:bg-indigo-100 transition"
+                (click)="selectDay(day)">
+                
+                <div class="flex flex-col h-full">
+                  <!-- Day Number -->
+                  <div 
+                    [class.text-gray-400]="!day.isCurrentMonth"
+                    [class.text-gray-900]="day.isCurrentMonth"
+                    [class.font-bold]="day.isToday"
+                    [class.text-indigo-600]="day.isToday"
+                    class="text-sm font-semibold mb-1">
+                    {{ day.day }}
+                  </div>
+                  
+                  <!-- Workout Indicator -->
+                  <div class="flex flex-1 items-center justify-center">
+                    @if (day.hasWorkout) {
+                      <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                    }
+                  </div>
+                  
+                  <!-- Today Indicator -->
+                  @if (day.isToday) {
+                    <div class="flex justify-center">
+                      <div class="w-1 h-1 bg-indigo-600 rounded-full"></div>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    } @else {
+      <!-- Login Required Screen -->
+      <div class="flex flex-col items-center justify-center min-h-[80vh]">
+        <div class="bg-white rounded-lg shadow-lg p-12 text-center max-w-md">
+          <!-- Lock Icon -->
+          <div class="mb-6 flex justify-center">
+            <div class="text-6xl">🔒</div>
+          </div>
+          
+          <h1 class="text-3xl font-bold text-gray-900 mb-4">Authentication Required</h1>
+          <p class="text-gray-600 text-lg mb-8">
+            You must be logged in to access your workout calendar. Please log in or create an account to get started.
+          </p>
+          
+          <div class="flex flex-col gap-4">
+            <a 
+              routerLink="/login"
+              class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition cursor-pointer">
+              Log In
+            </a>
+            <a 
+              routerLink="/signup"
+              class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-md transition cursor-pointer">
+              Sign Up
+            </a>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>

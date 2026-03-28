@@ -118,3 +118,111 @@ server.post('/users', async (req: Request, res: Response) => {
  * - Returns 401 Unauthorized on invalid credentials
  */
 server.post('/users/login', loginUser('users'));
+
+// ============================================
+// WORKOUT ROUTES
+// ============================================
+
+/**
+ * GET /users/:userId/workout-sessions
+ * Retrieves all workout sessions for a user, optionally filtered by month/year
+ */
+server.get('/users/:userId/workout-sessions', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const month = req.query.month ? parseInt(req.query.month as string) : null;
+  const year = req.query.year ? parseInt(req.query.year as string) : null;
+
+  let query = 'SELECT * FROM workout_sessions WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (month && year) {
+    query += ' AND YEAR(session_date) = ? AND MONTH(session_date) = ? ORDER BY session_date';
+    params.push(year, month);
+  } else {
+    query += ' ORDER BY session_date DESC';
+  }
+
+  db.query(query, params, (error: mysql.QueryError | null, results: any[]) => {
+    if (error) {
+      console.error('Failed to fetch workout sessions:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.json(results || []);
+    }
+  });
+});
+
+/**
+ * POST /users/:userId/workout-sessions
+ * Creates a new workout session for a user
+ */
+server.post('/users/:userId/workout-sessions', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const { session_date, note, duration_total_minutes } = req.body;
+
+  if (!session_date) {
+    return res.status(400).json({ error: 'session_date is required' });
+  }
+
+  const query = 'INSERT INTO workout_sessions (user_id, session_date, note, duration_total_minutes) VALUES (?, ?, ?, ?)';
+  const values = [userId, session_date, note || null, duration_total_minutes || null];
+
+  db.query(query, values, (error: mysql.QueryError | null, results: any) => {
+    if (error) {
+      console.error('Failed to create workout session:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.status(201).json({ session_id: results.insertId, user_id: userId, session_date, note, duration_total_minutes });
+    }
+  });
+});
+
+/**
+ * GET /exercises
+ * Retrieves all exercises
+ */
+server.get('/exercises', (req: Request, res: Response) => {
+  db.query('SELECT * FROM exercises ORDER BY exercise_name', (error: mysql.QueryError | null, results: any[]) => {
+    if (error) {
+      console.error('Failed to fetch exercises:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.json(results || []);
+    }
+  });
+});
+
+/**
+ * GET /muscle-groups
+ * Retrieves all muscle groups
+ */
+server.get('/muscle-groups', (req: Request, res: Response) => {
+  db.query('SELECT * FROM muscle_groups ORDER BY name', (error: mysql.QueryError | null, results: any[]) => {
+    if (error) {
+      console.error('Failed to fetch muscle groups:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.json(results || []);
+    }
+  });
+});
+
+/**
+ * GET /muscle-groups/:muscleGroupId/exercises
+ * Retrieves exercises for a specific muscle group
+ */
+server.get('/muscle-groups/:muscleGroupId/exercises', (req: Request, res: Response) => {
+  const muscleGroupId = req.params.muscleGroupId;
+  db.query(
+    'SELECT * FROM exercises WHERE muscle_group_id = ? ORDER BY exercise_name',
+    [muscleGroupId],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Failed to fetch exercises:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      } else {
+        res.json(results || []);
+      }
+    }
+  );
+});
