@@ -53,7 +53,7 @@ This project uses:
 - **Container not found?** Run: `docker ps` to verify
 - **Wrong credentials?** Check `backend/private/.env` matches default (user/password)
 - **Schema not imported?** Re-run the import command from [SETUP.md](SETUP.md)
-- **View logs:** `docker logs angular_login_signup_mysql`
+- **View logs:** `docker logs angular-archie`
 
 ### Port Already in Use
 

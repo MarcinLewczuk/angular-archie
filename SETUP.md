@@ -27,7 +27,7 @@ docker compose up -d
 **Import the database schema:**
 
 ```bash
-docker exec -i angular_login_signup_mysql mysql -uuser -ppassword login_signup_db < db/schema.sql
+docker exec -i angular-archie mysql -uuser -ppassword archiedb < db/schema.sql
 ```
 
 > **Note:** Run the import command in a bash terminal (Git Bash on Windows).
@@ -38,7 +38,7 @@ docker exec -i angular_login_signup_mysql mysql -uuser -ppassword login_signup_d
 docker ps
 ```
 
-You should see `angular_login_signup_mysql` in the list.
+You should see `angular-archie` in the list.
 
 ---
 
@@ -51,7 +51,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=user
 DB_PASS=password
-DB_NAME=login_signup_db
+DB_NAME=archiedb
 PORT=3000
 ```
 
@@ -113,7 +113,7 @@ docker compose down
 ```bash
 docker compose down -v
 docker compose up -d
-docker exec -i angular_login_signup_mysql mysql -uuser -ppassword login_signup_db < db/schema.sql
+docker exec -i angular-archie mysql -uuser -ppassword archiedb < db/schema.sql
 ```
 
 > **Warning:** The `-v` flag permanently deletes all database data so you will have to import the schema.sql file again.
@@ -128,7 +128,7 @@ docker exec -i angular_login_signup_mysql mysql -uuser -ppassword login_signup_d
 
 ### ❌ "Connection refused"
 - Wait a few seconds for MySQL to initialize
-- Check logs: `docker logs angular_login_signup_mysql`
+- Check logs: `docker logs angular-archie`
 
 ### ❌ Port 3306 already in use
 Edit `docker-compose.yml`:

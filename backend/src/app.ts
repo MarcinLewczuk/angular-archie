@@ -21,12 +21,17 @@ server.use(cors()); // Enable Cross-Origin Resource Sharing
  * MySQL database connection pool.
  * Credentials are loaded from environment variables defined in backend/private/.env
  */
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env['DB_HOST'],
   port: Number(process.env['DB_PORT']),
   user: process.env['DB_USER'],
   password: process.env['DB_PASS'],
-  database: process.env['DB_NAME']
+  database: process.env['DB_NAME'],
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
 // Export database connection for use in queries.ts
@@ -35,11 +40,12 @@ export { db };
 /**
  * Establish database connection and log connection status.
  */
-db.connect((error: mysql.QueryError | null) => {
+db.getConnection((error, connection) => {
   if (error) {
     console.error('Error connecting to database:', error);
   } else {
     console.log('Connected to database.');
+    connection.release();
   }
 });
 
