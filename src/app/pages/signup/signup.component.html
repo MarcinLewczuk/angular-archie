@@ -3,9 +3,9 @@
     <h1 class="text-2xl font-semibold text-gray-900 mb-4">Create account</h1>
 
     <form class="space-y-4" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-      <label for="email" class="block">
-        <span class="label-text block text-sm text-gray-500 mb-2">Email</span>
-        <input type="email" name="email" required placeholder="you@example.com" formControlName="email"
+      <label for="username" class="block">
+        <span class="label-text block text-sm text-gray-500 mb-2">Username</span>
+        <input type="text" name="username" required placeholder="Choose a username" formControlName="username"
           class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </label>
 
@@ -18,7 +18,7 @@
 
       <label for="confirmPassword" class="block">
         <span class="label-text block text-sm text-gray-500 mb-2">Confirm password</span>
-        <input type="confirmPassword" name="confirmPassword" required placeholder="Confirm password"
+        <input type="password" name="confirmPassword" required placeholder="Confirm password"
           formControlName="confirmPassword" required minlength="8"
           class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </label>
@@ -28,17 +28,8 @@
         account</button>
     </form>
 
-    <!-- For development - delete after functionality added -->
-    <p class="text-sm text-gray-600 mt-3">Submitted: <span class="font-mono text-sm text-gray-700">{{ emailControl.value
-        }}</span></p>
-    <p class="text-sm text-gray-600">Submitted: <span class="font-mono text-sm text-gray-700">{{ passwordControl.value
-        }}</span></p>
-    <!-- -- END -- -->
-
     <!-- Validation -->
-
-
-    @if (signupForm.get('email')?.errors?.['required']) {
+    <!-- @if (signupForm.get('email')?.errors?.['required']) {
     <div class="mt-1 pb-3">
       <small class="text-red-600 text-sm">✗ Email required</small>
     </div>
@@ -54,7 +45,7 @@
     <div class="mt-1 pb-3">
       <small class="text-red-600 text-sm">✗ Invalid email format</small>
     </div>
-    }
+    } -->
 
 
     <!-- Required -->

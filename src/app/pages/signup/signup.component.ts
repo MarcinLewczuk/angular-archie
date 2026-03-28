@@ -15,7 +15,7 @@ import PasswordValidation from '../../validators/password.validator';
 })
 
 export class SignupComponent {
-  emailControl = new FormControl('');
+  usernameControl = new FormControl('');
   passwordControl = new FormControl('');
   confirmPasswordControl = new FormControl('');
   r = inject(Router)
@@ -24,25 +24,27 @@ export class SignupComponent {
   snackbar = inject(SnackbarService)
   fb = inject(FormBuilder)
 
-  existingEmails: any[] =[]
-  existingEmails$ = of(this.existingEmails);
+  // existingEmails: any[] =[]
+  // existingEmails$ = of(this.existingEmails);
 
   signupForm = new FormGroup({
-    email: this.emailControl,
+    username: this.usernameControl,
     password: this.passwordControl,
     confirmPassword: this.confirmPasswordControl
   });
 
   constructor() {
     this.signupForm = this.fb.group({
-      email: ['', [Validators.required, EmailValidation.emailFormat], EmailValidation.emailTaken(this.http)],
+      username: ['', [Validators.required]],
+      // email: ['', [Validators.required, EmailValidation.emailFormat], EmailValidation.emailTaken(this.http)],
       password: ['', [Validators.required, PasswordValidation.passwordStrength]],
       confirmPassword: ['', [Validators.required, PasswordValidation.matchPassword]]
     })
   }
 
   ngOnInit():void {
-    this.emailControl = this.signupForm.get('email') as FormControl;
+    this.usernameControl = this.signupForm.get('username') as FormControl;
+    // this.emailControl = this.signupForm.get('email') as FormControl;
     this.passwordControl = this.signupForm.get('password') as FormControl;
     this.confirmPasswordControl = this.signupForm.get('confirmPassword') as FormControl;
   }
@@ -50,19 +52,19 @@ export class SignupComponent {
 onSubmit() {
   // Fail
   if (this.signupForm.invalid) {
-    if (this.emailControl.hasError('emailTaken')) {
-      this.snackbar.error('Email is already taken');
-    } else {
+    // if (this.emailControl.hasError('emailTaken')) {
+    //   this.snackbar.error('Email is already taken');
+    // } else {
       this.snackbar.error('Please fill in all fields correctly');
-    }
+    // }
     return;
   }
 
-  const { email, password } = this.signupForm.value;
-  this.auth.signup(email!, password!).subscribe({
+  const { username, password } = this.signupForm.value;
+  this.auth.signup(username!, password!).subscribe({
     next: () => {
       this.snackbar.success('Sign up successful!');
-      this.auth.login(email!, password!).subscribe({
+      this.auth.login(username!, password!).subscribe({
         next: () => {
           this.r.navigate(['/']);
         }
@@ -70,7 +72,7 @@ onSubmit() {
     },
     error: (err) => {
       if (err.status === 409 || err.error?.error?.includes('Duplicate')) {
-        this.snackbar.error('Email is already taken');
+        this.snackbar.error('Username is already taken');
       } else {
         this.snackbar.error('Sign up failed. Please try again.');
       }

@@ -76,21 +76,21 @@ export function insert(tableName: string, columns: string[]) {
 }
 
 /**
- * Authenticates a user by verifying email and bcrypt-hashed password.
+ * Authenticates a user by verifying username and bcrypt-hashed password.
  * @param tableName The name of the table containing user records.
  * @returns Middleware function that verifies credentials and returns sanitized user or 401 error.
  */
 export function loginUser(tableName: string) {
     return (req: Request, res: Response) => {
-        const { email, password } = req.body || {};
-        if (!email || !password) {
-            return res.status(400).json({ error: 'email and password required' });
+        const { username, password } = req.body || {};
+        if (!username || !password) {
+            return res.status(400).json({ error: 'username and password required' });
         }
 
-        // Fetch user record by email only; verify bcrypt hash separately.
+        // Fetch user record by username only; verify bcrypt hash separately.
         db.query(
-            `SELECT id, email, password FROM ${tableName} WHERE email = ? LIMIT 1`,
-            [email],
+            `SELECT id, username, password FROM ${tableName} WHERE username = ? LIMIT 1`,
+            [username],
             async (error: QueryError | null, results: any[]) => {
                 if (error) {
                     console.error(`LOGIN query on "${tableName}" failed:`, error);

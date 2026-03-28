@@ -4,7 +4,8 @@ import { Observable, tap } from 'rxjs';
 
 interface AuthUser {
 	id: number;
-	email: string;
+	username: string;
+	// email: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -17,8 +18,8 @@ export class AuthService {
 
 	constructor(private client: HttpClient) {}
 
-	login(email: string, password: string): Observable<AuthUser> {
-		return this.client.post<AuthUser>('http://localhost:3000/users/login', { email, password }).pipe(
+	login(username: string, password: string): Observable<AuthUser> {
+		return this.client.post<AuthUser>('http://localhost:3000/users/login', { username, password }).pipe(
 			tap(user => {
 				this.currentUserSig.set(user);
 				// Persist minimal session (avoid storing password)
@@ -27,8 +28,8 @@ export class AuthService {
 		);
 	}
 
-	signup(email: string, password: string): Observable<AuthUser> {
-		return this.client.post<AuthUser>('http://localhost:3000/users', { email, password }).pipe(
+	signup(username: string, password: string): Observable<AuthUser> {
+		return this.client.post<AuthUser>('http://localhost:3000/users', { username, password }).pipe(
 			tap(user => {
 				// Auto login
 				this.currentUserSig.set(user);

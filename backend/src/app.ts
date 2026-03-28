@@ -75,31 +75,31 @@ server.get('/users', (req: Request, res: Response) => {
 /**
  * GET /users/email
  * Retrieves all user email addresses.
+ * @deprecated Use username instead
  */
-server.get('/users/email', (req: Request, res: Response) => {
-  selectColumn('users', 'email')(req, res);
-});
+// server.get('/users/email', (req: Request, res: Response) => {
+//   selectColumn('users', 'email')(req, res);
+// });
 
 /**
  * POST /users
- * Creates a new user account with email and password.
- * - Validates required fields (email, password)
- * - Derives username from email
+ * Creates a new user account with username and password.
+ * - Validates required fields (username, password)
  * - Hashes password using bcrypt
  * - Returns sanitized user object (without password)
  */
 server.post('/users', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email and password required' });
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'username and password required' });
     }
-    const username = email.split('@')[0];
+    // const username = email.split('@')[0];
     const hashed = await hashPassword(password);
 
     // Rebuild request body with hashed password
-    req.body = { email, password: hashed, username };
-    insert('users', ['email', 'password'])(req, {
+    req.body = { username, password: hashed };
+    insert('users', ['username', 'password'])(req, {
       status: (code: number) => ({
         json: (payload: any) => res.status(code).json(sanitizeUser(payload))
       })
@@ -112,7 +112,7 @@ server.post('/users', async (req: Request, res: Response) => {
 
 /**
  * POST /users/login
- * Authenticates a user by email and password.
+ * Authenticates a user by username and password.
  * - Verifies credentials against bcrypt-hashed password
  * - Returns sanitized user object (without password) on success
  * - Returns 401 Unauthorized on invalid credentials

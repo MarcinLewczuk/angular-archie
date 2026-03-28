@@ -13,7 +13,7 @@ import { inject } from '@angular/core';
   templateUrl: './login.component.html'
 })
 export class LoginComponent {
-  emailControl = new FormControl('');
+  usernameControl = new FormControl('');
   passwordControl = new FormControl('');
 
   http = inject(HttpClient)
@@ -26,13 +26,15 @@ export class LoginComponent {
   
   constructor() {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, EmailValidation.emailFormat]],
+      username: ['', [Validators.required]],
+      // email: ['', [Validators.required, EmailValidation.emailFormat]],
       password: ['', [Validators.required]],
     });
   }
 
   ngOnInit() {
-    this.emailControl = this.loginForm.get('email') as FormControl;
+    this.usernameControl = this.loginForm.get('username') as FormControl;
+    // this.emailControl = this.loginForm.get('email') as FormControl;
     this.passwordControl = this.loginForm.get('password') as FormControl;
   }
 
@@ -42,15 +44,15 @@ export class LoginComponent {
       return;
     }
 
-    const { email, password } = this.loginForm.value;
-    this.auth.login(email!, password!).subscribe({
+    const { username, password } = this.loginForm.value;
+    this.auth.login(username!, password!).subscribe({
       next: () => {
         this.snackbar.success('Login successful!');
         this.router.navigate(['/']);
       },
       error: (err) => {
         if (err.status === 401) {
-          this.snackbar.error('Invalid email or password');
+          this.snackbar.error('Invalid username or password');
         } else {
           this.snackbar.error('Login failed. Please try again.');
         }
