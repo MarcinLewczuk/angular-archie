@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/AuthService';
+import { WorkoutService } from '../../services/WorkoutService';
 
 interface WorkoutDay {
   date: Date;
@@ -10,6 +11,7 @@ interface WorkoutDay {
   hasWorkout: boolean;
   isCurrentMonth: boolean;
   isToday: boolean;
+  muscleGroups: string[];
 }
 
 @Component({
@@ -21,12 +23,15 @@ interface WorkoutDay {
 })
 export class WorkoutsComponent implements OnInit {
   auth = inject(AuthService);
+  router = inject(Router);
+  private workout = inject(WorkoutService);
   
   currentDate = new Date();
   currentMonth = signal(this.currentDate.getMonth());
   currentYear = signal(this.currentDate.getFullYear());
   
-  weeks: WorkoutDay[][] = [];
+  weeks = signal<WorkoutDay[][]>([]);
+  private hasLoadedWorkouts = false;
   
   monthName = computed(() => {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -36,10 +41,18 @@ export class WorkoutsComponent implements OnInit {
 
   ngOnInit(): void {
     this.generateCalendar();
+    this.loadWorkoutData();
+    
+    // Retry loading after a short delay in case auth wasn't ready
+    setTimeout(() => {
+      if (this.auth.isAuthenticated() && !this.hasLoadedWorkouts) {
+        this.loadWorkoutData();
+      }
+    }, 500);
   }
 
   generateCalendar(): void {
-    this.weeks = [];
+    const newWeeks: WorkoutDay[][] = [];
     
     const currentMonth = this.currentMonth();
     const currentYear = this.currentYear();
@@ -65,7 +78,8 @@ export class WorkoutsComponent implements OnInit {
         month: currentMonth - 1,
         hasWorkout: false,
         isCurrentMonth: false,
-        isToday: this.isToday(date)
+        isToday: this.isToday(date),
+        muscleGroups: []
       });
     }
     
@@ -78,11 +92,12 @@ export class WorkoutsComponent implements OnInit {
         month: currentMonth,
         hasWorkout: false,
         isCurrentMonth: true,
-        isToday: this.isToday(date)
+        isToday: this.isToday(date),
+        muscleGroups: []
       });
       
       if (week.length === 7) {
-        this.weeks.push(week);
+        newWeeks.push(week);
         week = [];
       }
     }
@@ -97,14 +112,17 @@ export class WorkoutsComponent implements OnInit {
         month: currentMonth + 1,
         hasWorkout: false,
         isCurrentMonth: false,
-        isToday: this.isToday(date)
+        isToday: this.isToday(date),
+        muscleGroups: []
       });
       nextDay++;
     }
     
     if (week.length > 0) {
-      this.weeks.push(week);
+      newWeeks.push(week);
     }
+    
+    this.weeks.set(newWeeks);
   }
 
   isToday(date: Date): boolean {
@@ -114,38 +132,99 @@ export class WorkoutsComponent implements OnInit {
            date.getFullYear() === today.getFullYear();
   }
 
-  previousMonth(): void {
-    let month = this.currentMonth();
-    let year = this.currentYear();
-    
-    month--;
-    if (month < 0) {
-      month = 11;
-      year--;
+  previousMonth(): void {    this.currentMonth.update(m => m === 0 ? 11 : m - 1);
+    if (this.currentMonth() === 11) {
+      this.currentYear.update(y => y - 1);
     }
-    
-    this.currentMonth.set(month);
-    this.currentYear.set(year);
     this.generateCalendar();
+    this.loadWorkoutData();
   }
 
   nextMonth(): void {
-    let month = this.currentMonth();
-    let year = this.currentYear();
-    
-    month++;
-    if (month > 11) {
-      month = 0;
-      year++;
+    this.currentMonth.update(m => m === 11 ? 0 : m + 1);
+    if (this.currentMonth() === 0) {
+      this.currentYear.update(y => y + 1);
     }
-    
-    this.currentMonth.set(month);
-    this.currentYear.set(year);
     this.generateCalendar();
+    this.loadWorkoutData();
   }
 
   selectDay(workoutDay: WorkoutDay): void {
-    // TODO: Implement detail view when needed
-    console.log('Selected day:', workoutDay.date);
+    if (!workoutDay.isCurrentMonth) return;
+    
+    const dateString = this.formatDateForQuery(workoutDay.date);
+    this.router.navigate(['/workouts/detail'], { queryParams: { date: dateString } });
+  }
+
+  private formatDateForQuery(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private loadWorkoutData(): void {
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+    
+    const userId = this.auth.currentUser?.user_id;
+    if (!userId) {
+      return;
+    }
+    
+    this.hasLoadedWorkouts = true;
+
+    
+    // Fetch all workout sessions for the current month
+    this.workout.getWorkoutSessions(userId, this.currentMonth(), this.currentYear()).subscribe({
+      next: (sessions) => {
+        // Build a map of exercise logs by session_id
+        const sessionsWithExercises = sessions.filter(s => s.session_id);
+        
+        // Fetch exercise logs for each session
+        sessionsWithExercises.forEach(session => {
+          this.workout.getExerciseLogs(session.session_id).subscribe({
+            next: (logs) => {
+              // Extract unique muscle groups from logs
+              const muscleGroupsSet = new Set<string>();
+              logs.forEach(log => {
+                if (log.muscle_group_name) {
+                  muscleGroupsSet.add(log.muscle_group_name);
+                }
+              });
+              
+              const muscleGroupArray = Array.from(muscleGroupsSet);
+              
+              // Find and update the corresponding day in the calendar
+              const sessionDate = new Date(session.session_date);
+              
+              const updatedWeeks = this.weeks().map(week => 
+                week.map(day => {
+                  if (this.isSameDay(day.date, sessionDate)) {
+                    return {
+                      ...day,
+                      hasWorkout: true,
+                      muscleGroups: muscleGroupArray
+                    };
+                  }
+                  return day;
+                })
+              );
+              
+              this.weeks.set(updatedWeeks);
+            },
+            error: (err) => console.error('Error loading exercise logs:', err)
+          });
+        });
+      },
+      error: (err) => console.error('Error loading workout sessions:', err)
+    });
+  }
+
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
   }
 }

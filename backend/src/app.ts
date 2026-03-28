@@ -153,26 +153,116 @@ server.get('/users/:userId/workout-sessions', (req: Request, res: Response) => {
 });
 
 /**
+ * GET /users/:userId/workout-sessions/:sessionDate
+ * Retrieves a workout session for a user on a specific date
+ * @param userId User ID
+ * @param sessionDate Date in YYYY-MM-DD format
+ */
+server.get('/users/:userId/workout-sessions/:sessionDate', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const sessionDate = req.params.sessionDate;
+
+  const query = 'SELECT * FROM workout_sessions WHERE user_id = ? AND DATE(session_date) = ?';
+  db.query(query, [userId, sessionDate], (error: mysql.QueryError | null, results: any[]) => {
+    if (error) {
+      console.error('Failed to fetch workout session:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.length === 0) {
+      res.status(404).json({ error: 'Workout session not found' });
+    } else {
+      res.json(results[0]);
+    }
+  });
+});
+
+/**
+ * GET /workout-sessions/:sessionId/exercise-logs
+ * Retrieves all exercise logs for a specific workout session
+ * @param sessionId Workout session ID
+ */
+server.get('/workout-sessions/:sessionId/exercise-logs', (req: Request, res: Response) => {
+  const sessionId = req.params.sessionId;
+
+  const query = `
+    SELECT el.*, e.exercise_name, mg.name as muscle_group_name
+    FROM exercise_logs el
+    JOIN exercises e ON el.exercise_id = e.exercise_id
+    JOIN muscle_groups mg ON e.muscle_group_id = mg.muscle_group_id
+    WHERE el.session_id = ?
+    ORDER BY el.log_id
+  `;
+  
+  db.query(query, [sessionId], (error: mysql.QueryError | null, results: any[]) => {
+    if (error) {
+      console.error('Failed to fetch exercise logs:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.json(results || []);
+    }
+  });
+});
+
+/**
  * POST /users/:userId/workout-sessions
  * Creates a new workout session for a user
  */
 server.post('/users/:userId/workout-sessions', (req: Request, res: Response) => {
   const userId = req.params.userId;
-  const { session_date, note, duration_total_minutes } = req.body;
+  const { session_date, trainer_note, user_note, duration_total_minutes } = req.body;
 
   if (!session_date) {
     return res.status(400).json({ error: 'session_date is required' });
   }
 
-  const query = 'INSERT INTO workout_sessions (user_id, session_date, note, duration_total_minutes) VALUES (?, ?, ?, ?)';
-  const values = [userId, session_date, note || null, duration_total_minutes || null];
+  // Try to insert with new columns, fall back to old column if table doesn't have them
+  let query = 'INSERT INTO workout_sessions (user_id, session_date, trainer_note, user_note, duration_total_minutes) VALUES (?, ?, ?, ?, ?)';
+  let values = [userId, session_date, trainer_note || null, user_note || null, duration_total_minutes || null];
 
   db.query(query, values, (error: mysql.QueryError | null, results: any) => {
     if (error) {
-      console.error('Failed to create workout session:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      // If trainer_note doesn't exist, fall back to old schema with 'note' column
+      if (error.sqlState === '42S22' && error.message.includes('trainer_note')) {
+        const fallbackQuery = 'INSERT INTO workout_sessions (user_id, session_date, note, duration_total_minutes) VALUES (?, ?, ?, ?)';
+        const fallbackValues = [userId, session_date, trainer_note || user_note || null, duration_total_minutes || null];
+        
+        db.query(fallbackQuery, fallbackValues, (fallbackError: mysql.QueryError | null, fallbackResults: any) => {
+          if (fallbackError) {
+            console.error('Failed to create workout session:', fallbackError);
+            res.status(500).json({ error: 'Internal server error' });
+          } else {
+            res.status(201).json({ session_id: fallbackResults.insertId, user_id: userId, session_date, trainer_note, user_note, duration_total_minutes });
+          }
+        });
+      } else {
+        console.error('Failed to create workout session:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
     } else {
-      res.status(201).json({ session_id: results.insertId, user_id: userId, session_date, note, duration_total_minutes });
+      res.status(201).json({ session_id: results.insertId, user_id: userId, session_date, trainer_note, user_note, duration_total_minutes });
+    }
+  });
+});
+
+/**
+ * PUT /workout-sessions/:sessionId/user-note
+ * Updates the user note for a workout session
+ * @param sessionId Workout session ID
+ */
+server.put('/workout-sessions/:sessionId/user-note', (req: Request, res: Response) => {
+  const sessionId = req.params.sessionId;
+  const { user_note } = req.body;
+
+  const query = 'UPDATE workout_sessions SET user_note = ? WHERE session_id = ?';
+  const values = [user_note || null, sessionId];
+
+  db.query(query, values, (error: mysql.QueryError | null, results: any) => {
+    if (error) {
+      console.error('Failed to update user note:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.affectedRows === 0) {
+      res.status(404).json({ error: 'Workout session not found' });
+    } else {
+      res.json({ success: true, message: 'User note updated' });
     }
   });
 });
@@ -225,4 +315,83 @@ server.get('/muscle-groups/:muscleGroupId/exercises', (req: Request, res: Respon
       }
     }
   );
+});
+/**
+ * POST /workout-sessions/:sessionId/exercise-logs
+ * Creates a new exercise log for a workout session
+ * @param sessionId Workout session ID
+ */
+server.post('/workout-sessions/:sessionId/exercise-logs', (req: Request, res: Response) => {
+  const sessionId = req.params.sessionId;
+  const { exercise_id, sets, reps, weight_kg, duration_minutes } = req.body;
+
+  if (!exercise_id) {
+    return res.status(400).json({ error: 'exercise_id is required' });
+  }
+
+  const query = `
+    INSERT INTO exercise_logs (session_id, exercise_id, sets, reps, weight_kg, duration_minutes)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  const values = [sessionId, exercise_id, sets || null, reps || null, weight_kg || null, duration_minutes || null];
+
+  db.query(query, values, (error: mysql.QueryError | null, results: any) => {
+    if (error) {
+      console.error('Failed to create exercise log:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.status(201).json({ log_id: results.insertId, session_id: sessionId, exercise_id, sets, reps, weight_kg, duration_minutes });
+    }
+  });
+});
+
+/**
+ * PUT /exercise-logs/:logId
+ * Updates an exercise log
+ * @param logId Exercise log ID
+ */
+server.put('/exercise-logs/:logId', (req: Request, res: Response) => {
+  const logId = req.params.logId;
+  const { sets, reps, weight_kg, duration_minutes } = req.body;
+
+  const query = `
+    UPDATE exercise_logs
+    SET sets = COALESCE(?, sets),
+        reps = COALESCE(?, reps),
+        weight_kg = COALESCE(?, weight_kg),
+        duration_minutes = COALESCE(?, duration_minutes)
+    WHERE log_id = ?
+  `;
+  const values = [sets, reps, weight_kg, duration_minutes, logId];
+
+  db.query(query, values, (error: mysql.QueryError | null, results: any) => {
+    if (error) {
+      console.error('Failed to update exercise log:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.affectedRows === 0) {
+      res.status(404).json({ error: 'Exercise log not found' });
+    } else {
+      res.json({ success: true, message: 'Exercise log updated' });
+    }
+  });
+});
+
+/**
+ * DELETE /exercise-logs/:logId
+ * Deletes an exercise log
+ * @param logId Exercise log ID
+ */
+server.delete('/exercise-logs/:logId', (req: Request, res: Response) => {
+  const logId = req.params.logId;
+
+  db.query('DELETE FROM exercise_logs WHERE log_id = ?', [logId], (error: mysql.QueryError | null, results: any) => {
+    if (error) {
+      console.error('Failed to delete exercise log:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.affectedRows === 0) {
+      res.status(404).json({ error: 'Exercise log not found' });
+    } else {
+      res.json({ success: true, message: 'Exercise log deleted' });
+    }
+  });
 });

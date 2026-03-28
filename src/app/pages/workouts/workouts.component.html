@@ -43,13 +43,13 @@
           
           <!-- Calendar Days -->
           <tbody>
-            <tr *ngFor="let week of weeks">
+            <tr *ngFor="let week of weeks()">
               <td 
                 *ngFor="let day of week"
                 [class.bg-gray-50]="!day.isCurrentMonth"
                 [class.bg-white]="day.isCurrentMonth"
                 [class.bg-indigo-50]="day.isToday"
-                class="border border-gray-200 p-3 h-24 align-top cursor-pointer hover:bg-indigo-100 transition"
+                class="border border-gray-200 p-3 h-32 align-top cursor-pointer hover:bg-indigo-100 transition"
                 (click)="selectDay(day)">
                 
                 <div class="flex flex-col h-full">
@@ -63,9 +63,26 @@
                     {{ day.day }}
                   </div>
                   
+                  <!-- Muscle Groups or Rest Day -->
+                  @if (day.isCurrentMonth && day.muscleGroups.length > 0) {
+                    <div class="mb-2 flex flex-col gap-1">
+                      @for (group of day.muscleGroups; track group) {
+                        <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-medium truncate">
+                          {{ group }}
+                        </span>
+                      }
+                    </div>
+                  } @else if (day.isCurrentMonth && !day.hasWorkout) {
+                    <div class="mb-2">
+                      <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                        Rest
+                      </span>
+                    </div>
+                  }
+                  
                   <!-- Workout Indicator -->
                   <div class="flex flex-1 items-center justify-center">
-                    @if (day.hasWorkout) {
+                    @if (day.hasWorkout && day.muscleGroups.length === 0) {
                       <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
                     }
                   </div>
