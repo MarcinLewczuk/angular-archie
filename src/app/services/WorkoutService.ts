@@ -6,7 +6,8 @@ export interface WorkoutSession {
 	session_id: number;
 	user_id: number;
 	session_date: string;
-	note?: string;
+	trainer_note?: string;
+	user_note?: string;
 	duration_total_minutes?: number;
 }
 
@@ -24,6 +25,10 @@ export interface ExerciseLog {
 	reps?: number;
 	weight_kg?: number;
 	duration_minutes?: number;
+	exercise_name?: string;
+	muscle_group_name?: string;
+	trainer_note?: string;
+	created_by?: 'trainer' | 'user';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -46,10 +51,11 @@ export class WorkoutService {
 	}
 
 	// Create new workout session
-	createWorkoutSession(userId: number, sessionDate: string, note?: string): Observable<WorkoutSession> {
+	createWorkoutSession(userId: number, sessionDate: string, trainerNote?: string, userNote?: string): Observable<WorkoutSession> {
 		return this.http.post<WorkoutSession>(`${this.baseUrl}/users/${userId}/workout-sessions`, {
 			session_date: sessionDate,
-			note
+			trainer_note: trainerNote,
+			user_note: userNote
 		});
 	}
 
@@ -86,5 +92,22 @@ export class WorkoutService {
 	// Delete exercise log
 	deleteExerciseLog(logId: number): Observable<void> {
 		return this.http.delete<void>(`${this.baseUrl}/exercise-logs/${logId}`);
+	}
+
+	// Get workout session by user and date
+	getWorkoutSessionByDate(userId: number, sessionDate: string): Observable<WorkoutSession> {
+		return this.http.get<WorkoutSession>(`${this.baseUrl}/users/${userId}/workout-sessions/${sessionDate}`);
+	}
+
+	// Get all exercise logs for a session
+	getExerciseLogs(sessionId: number): Observable<ExerciseLog[]> {
+		return this.http.get<ExerciseLog[]>(`${this.baseUrl}/workout-sessions/${sessionId}/exercise-logs`);
+	}
+
+	// Save user note for a workout session
+	saveUserNote(sessionId: number, userNote: string): Observable<any> {
+		return this.http.put(`${this.baseUrl}/workout-sessions/${sessionId}/user-note`, {
+			user_note: userNote
+		});
 	}
 }
