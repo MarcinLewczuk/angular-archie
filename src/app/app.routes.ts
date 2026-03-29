@@ -4,6 +4,8 @@ import { LoginComponent } from './pages/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
 import { WorkoutsComponent } from './pages/workouts/workouts.component';
 import { WorkoutDetailComponent } from './pages/workouts/workout-detail/workout-detail.component';
+import { TrainerDashboardComponent } from './pages/trainer-dashboard/trainer-dashboard.component';
+import { ExerciseManagementComponent } from './pages/exercise-management/exercise-management.component';
 
 export const routes: Routes = [
     {
@@ -30,5 +32,15 @@ export const routes: Routes = [
         path: 'workouts/detail',
         component: WorkoutDetailComponent,
         title: 'Workout Detail'
+    },
+    {
+        path: 'trainer-dashboard',
+        component: TrainerDashboardComponent,
+        title: 'Trainer Dashboard'
+    },
+    {
+        path: 'exercise-management',
+        component: ExerciseManagementComponent,
+        title: 'Exercise Management'
     }
 ];

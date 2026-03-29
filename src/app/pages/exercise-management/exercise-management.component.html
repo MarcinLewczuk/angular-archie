@@ -1,0 +1,200 @@
+<div *ngIf="authService.isAuthenticated() && authService.isTrainer()" class="exercise-management-container">
+  <h1>Exercise & Muscle Group Management</h1>
+
+  <!-- Tab Navigation -->
+  <div class="tabs">
+    <button
+      [class.active]="activeTab === 'muscle-groups'"
+      (click)="activeTab = 'muscle-groups'"
+      class="tab-btn"
+    >
+      Muscle Groups
+    </button>
+    <button
+      [class.active]="activeTab === 'exercises'"
+      (click)="activeTab = 'exercises'"
+      class="tab-btn"
+    >
+      Exercises
+    </button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading()" class="loading">
+    <p>Loading...</p>
+  </div>
+
+  <!-- Muscle Groups Tab -->
+  <div *ngIf="activeTab === 'muscle-groups' && !isLoading()" class="tab-content">
+    <h2>Muscle Groups</h2>
+
+    <button
+      (click)="toggleNewMuscleGroupForm()"
+      class="btn btn-primary"
+    >
+      {{ showNewMuscleGroupForm ? 'Cancel' : 'Add Muscle Group' }}
+    </button>
+
+    <!-- New/Edit Muscle Group Form -->
+    <div *ngIf="showNewMuscleGroupForm" class="form-card">
+      <h3>{{ editingMuscleGroup ? 'Edit' : 'Create New' }} Muscle Group</h3>
+      <form [formGroup]="muscleGroupForm" (ngSubmit)="editingMuscleGroup ? updateMuscleGroup() : createMuscleGroup()" class="form">
+        <div class="form-group">
+          <label for="mg_name">Muscle Group Name</label>
+          <input
+            id="mg_name"
+            type="text"
+            formControlName="name"
+            placeholder="e.g., Chest, Back, Legs"
+            class="input"
+          />
+          <div *ngIf="muscleGroupForm.get('name')?.hasError('required') && muscleGroupForm.get('name')?.touched" class="error">
+            Muscle group name is required
+          </div>
+          <div *ngIf="muscleGroupForm.get('name')?.hasError('minlength') && muscleGroupForm.get('name')?.touched" class="error">
+            Name must be at least 2 characters
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="!muscleGroupForm.valid" class="btn btn-success">
+            {{ editingMuscleGroup ? 'Update' : 'Create' }}
+          </button>
+          <button
+            type="button"
+            (click)="toggleNewMuscleGroupForm()"
+            class="btn btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Muscle Groups List -->
+    <div class="list-container">
+      <div *ngIf="muscleGroups().length === 0" class="empty-state">
+        <p>No muscle groups yet. Create one to get started!</p>
+      </div>
+
+      <div *ngFor="let group of muscleGroups()" class="list-item">
+        <div class="item-content">
+          <h4>{{ group.name }}</h4>
+          <p>ID: {{ group.muscle_group_id }}</p>
+        </div>
+        <div class="item-actions">
+          <button (click)="editMuscleGroup(group)" class="btn btn-sm btn-info">Edit</button>
+          <button (click)="deleteMuscleGroup(group.muscle_group_id)" class="btn btn-sm btn-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercises Tab -->
+  <div *ngIf="activeTab === 'exercises' && !isLoading()" class="tab-content">
+    <h2>Exercises</h2>
+
+    <button
+      (click)="toggleNewExerciseForm()"
+      class="btn btn-primary"
+    >
+      {{ showNewExerciseForm ? 'Cancel' : 'Add Exercise' }}
+    </button>
+
+    <!-- New/Edit Exercise Form -->
+    <div *ngIf="showNewExerciseForm" class="form-card">
+      <h3>{{ editingExercise ? 'Edit' : 'Create New' }} Exercise</h3>
+      <form [formGroup]="exerciseForm" (ngSubmit)="editingExercise ? updateExercise() : createExercise()" class="form">
+        <div class="form-group">
+          <label for="ex_name">Exercise Name</label>
+          <input
+            id="ex_name"
+            type="text"
+            formControlName="exercise_name"
+            placeholder="e.g., Bench Press, Squats"
+            class="input"
+          />
+          <div *ngIf="exerciseForm.get('exercise_name')?.hasError('required') && exerciseForm.get('exercise_name')?.touched" class="error">
+            Exercise name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mg_select">Muscle Group</label>
+          <select
+            id="mg_select"
+            formControlName="muscle_group_id"
+            class="input"
+          >
+            <option value="" disabled>Select a muscle group</option>
+            <option *ngFor="let group of muscleGroups()" [value]="group.muscle_group_id">
+              {{ group.name }}
+            </option>
+          </select>
+          <div *ngIf="exerciseForm.get('muscle_group_id')?.hasError('required') && exerciseForm.get('muscle_group_id')?.touched" class="error">
+            Muscle group is required
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="!exerciseForm.valid" class="btn btn-success">
+            {{ editingExercise ? 'Update' : 'Create' }}
+          </button>
+          <button
+            type="button"
+            (click)="toggleNewExerciseForm()"
+            class="btn btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Exercises List -->
+    <div class="list-container">
+      <div *ngIf="exercises().length === 0" class="empty-state">
+        <p>No exercises yet. Create one to get started!</p>
+      </div>
+
+      <div *ngFor="let exercise of exercises()" class="list-item">
+        <div class="item-content">
+          <h4>{{ exercise.exercise_name }}</h4>
+          <p>Muscle Group: {{ getMuscleGroupName(exercise.muscle_group_id) }}</p>
+        </div>
+        <div class="item-actions">
+          <button (click)="editExercise(exercise)" class="btn btn-sm btn-info">Edit</button>
+          <button (click)="deleteExercise(exercise.exercise_id)" class="btn btn-sm btn-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Authentication Required Screen -->
+<div *ngIf="!authService.isAuthenticated() || !authService.isTrainer()" class="flex flex-col items-center justify-center min-h-[80vh] bg-gray-50 p-6">
+  <div class="bg-white rounded-lg shadow-lg p-12 text-center max-w-md">
+    <!-- Lock Icon -->
+    <div class="mb-6 flex justify-center">
+      <div class="text-6xl">🔒</div>
+    </div>
+    
+    <h1 class="text-3xl font-bold text-gray-900 mb-4">Authentication Required</h1>
+    <p class="text-gray-600 text-lg mb-8">
+      You must be logged in as a trainer to access exercise management. Please log in or create an account to get started.
+    </p>
+    
+    <div class="flex flex-col gap-4">
+      <a 
+        routerLink="/login"
+        class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition cursor-pointer">
+        Log In
+      </a>
+      <a 
+        routerLink="/signup"
+        class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-md transition cursor-pointer">
+        Sign Up
+      </a>
+    </div>
+  </div>
+</div>

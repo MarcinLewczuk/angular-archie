@@ -18,6 +18,7 @@ export class SignupComponent {
   usernameControl = new FormControl('');
   passwordControl = new FormControl('');
   confirmPasswordControl = new FormControl('');
+  roleControl = new FormControl('client'); // Add role control
   r = inject(Router)
   http = inject(HttpClient)
   auth = inject(AuthService)
@@ -30,7 +31,8 @@ export class SignupComponent {
   signupForm = new FormGroup({
     username: this.usernameControl,
     password: this.passwordControl,
-    confirmPassword: this.confirmPasswordControl
+    confirmPassword: this.confirmPasswordControl,
+    role: this.roleControl
   });
 
   constructor() {
@@ -38,7 +40,8 @@ export class SignupComponent {
       username: ['', [Validators.required]],
       // email: ['', [Validators.required, EmailValidation.emailFormat], EmailValidation.emailTaken(this.http)],
       password: ['', [Validators.required, PasswordValidation.passwordStrength]],
-      confirmPassword: ['', [Validators.required, PasswordValidation.matchPassword]]
+      confirmPassword: ['', [Validators.required, PasswordValidation.matchPassword]],
+      role: ['client', Validators.required]
     })
   }
 
@@ -47,6 +50,7 @@ export class SignupComponent {
     // this.emailControl = this.signupForm.get('email') as FormControl;
     this.passwordControl = this.signupForm.get('password') as FormControl;
     this.confirmPasswordControl = this.signupForm.get('confirmPassword') as FormControl;
+    this.roleControl = this.signupForm.get('role') as FormControl;
   }
 
 onSubmit() {
@@ -60,8 +64,8 @@ onSubmit() {
     return;
   }
 
-  const { username, password } = this.signupForm.value;
-  this.auth.signup(username!, password!).subscribe({
+  const { username, password, role } = this.signupForm.value;
+  this.auth.signup(username!, password!, role as 'trainer' | 'client').subscribe({
     next: () => {
       this.snackbar.success('Sign up successful!');
       this.auth.login(username!, password!).subscribe({

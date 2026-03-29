@@ -74,6 +74,11 @@ export class WorkoutService {
 		return this.http.get<Exercise[]>(`${this.baseUrl}/exercises`);
 	}
 
+	// Get all muscle groups
+	getMuscleGroups(): Observable<any[]> {
+		return this.http.get<any[]>(`${this.baseUrl}/muscle-groups`);
+	}
+
 	// Get exercises by muscle group
 	getExercisesByMuscleGroup(muscleGroupId: number): Observable<Exercise[]> {
 		return this.http.get<Exercise[]>(`${this.baseUrl}/muscle-groups/${muscleGroupId}/exercises`);
@@ -109,5 +114,37 @@ export class WorkoutService {
 		return this.http.put(`${this.baseUrl}/workout-sessions/${sessionId}/user-note`, {
 			user_note: userNote
 		});
+	}
+
+	// CRUD operations for Muscle Groups
+	createMuscleGroup(name: string): Observable<any> {
+		return this.http.post(`${this.baseUrl}/muscle-groups`, { name });
+	}
+
+	updateMuscleGroup(muscleGroupId: number, name: string): Observable<any> {
+		return this.http.put(`${this.baseUrl}/muscle-groups/${muscleGroupId}`, { name });
+	}
+
+	deleteMuscleGroup(muscleGroupId: number): Observable<void> {
+		return this.http.delete<void>(`${this.baseUrl}/muscle-groups/${muscleGroupId}`);
+	}
+
+	// CRUD operations for Exercises
+	createExercise(exerciseName: string, muscleGroupId: number): Observable<any> {
+		return this.http.post(`${this.baseUrl}/exercises`, {
+			exercise_name: exerciseName,
+			muscle_group_id: muscleGroupId
+		});
+	}
+
+	updateExercise(exerciseId: number, exerciseName: string, muscleGroupId: number): Observable<any> {
+		return this.http.put(`${this.baseUrl}/exercises/${exerciseId}`, {
+			exercise_name: exerciseName,
+			muscle_group_id: muscleGroupId
+		});
+	}
+
+	deleteExercise(exerciseId: number): Observable<void> {
+		return this.http.delete<void>(`${this.baseUrl}/exercises/${exerciseId}`);
 	}
 }

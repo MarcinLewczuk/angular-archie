@@ -15,8 +15,9 @@ SET FOREIGN_KEY_CHECKS=1;
 -- ============================================
 -- INSERT SAMPLE USERS
 -- ============================================
-INSERT INTO `users` (`user_id`, `username`, `password`, `created_at`) VALUES
-(1, 'admin', '$2b$12$JJZfTT/gV49l8MYpV0TAWO/xjQoir1.G2q5fc6We9CyhZqBgTO6nO', NOW());
+INSERT INTO `users` (`user_id`, `username`, `password`, `role`, `trainer_id`, `created_at`) VALUES
+(1, 'admin', '$2b$12$JJZfTT/gV49l8MYpV0TAWO/xjQoir1.G2q5fc6We9CyhZqBgTO6nO', 'trainer', NULL, NOW()),
+(2, 'archie', '$2b$12$JJZfTT/gV49l8MYpV0TAWO/xjQoir1.G2q5fc6We9CyhZqBgTO6nO', 'client', 1, NOW());
 
 -- ============================================
 -- INSERT MUSCLE GROUPS
