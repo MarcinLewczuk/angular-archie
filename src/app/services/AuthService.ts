@@ -5,6 +5,8 @@ import { Observable, tap } from 'rxjs';
 interface AuthUser {
 	user_id: number;
 	username: string;
+	role: 'trainer' | 'client';
+	trainer_id?: number;
 	// email: string;
 }
 
@@ -28,11 +30,12 @@ export class AuthService {
 		);
 	}
 
-	signup(username: string, password: string): Observable<AuthUser> {
-		return this.client.post<AuthUser>('http://localhost:3000/users', { username, password }).pipe(
+	signup(username: string, password: string, role: 'trainer' | 'client' = 'client'): Observable<AuthUser> {
+		return this.client.post<AuthUser>('http://localhost:3000/users', { username, password, role }).pipe(
 			tap(user => {
 				// Auto login
 				this.currentUserSig.set(user);
+				localStorage.setItem('auth_user', JSON.stringify(user));
 			})
 		);
 	}
@@ -54,5 +57,13 @@ export class AuthService {
 
 	get currentUser(): AuthUser | null {
 		return this.currentUserSig();
+	}
+
+	isTrainer(): boolean {
+		return this.currentUserSig()?.role === 'trainer';
+	}
+
+	isClient(): boolean {
+		return this.currentUserSig()?.role === 'client';
 	}
 }

@@ -2,8 +2,12 @@ CREATE TABLE `users` (
   `user_id` int NOT NULL AUTO_INCREMENT,
   `username` varchar(55) NOT NULL UNIQUE,
   `password` varchar(255) NOT NULL,
+  `role` enum('trainer', 'client') DEFAULT 'client',
+  `trainer_id` int,
   `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`)
+  PRIMARY KEY (`user_id`),
+  KEY `fk_users_trainer` (`trainer_id`),
+  CONSTRAINT `fk_users_trainer` FOREIGN KEY (`trainer_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `muscle_groups` (
@@ -45,9 +49,12 @@ CREATE TABLE `exercise_logs` (
   `duration_minutes` int,
   `trainer_note` text,
   `created_by` enum('trainer', 'user') DEFAULT 'user',
+  `created_by_user_id` int,
   PRIMARY KEY (`log_id`),
   KEY `fk_logs_session` (`session_id`),
   KEY `fk_logs_exercise` (`exercise_id`),
+  KEY `fk_logs_user` (`created_by_user_id`),
   CONSTRAINT `fk_logs_session` FOREIGN KEY (`session_id`) REFERENCES `workout_sessions` (`session_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_logs_exercise` FOREIGN KEY (`exercise_id`) REFERENCES `exercises` (`exercise_id`) ON DELETE CASCADE
+  CONSTRAINT `fk_logs_exercise` FOREIGN KEY (`exercise_id`) REFERENCES `exercises` (`exercise_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_logs_user` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

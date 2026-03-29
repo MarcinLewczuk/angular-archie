@@ -142,6 +142,11 @@ export class WorkoutDetailComponent implements OnInit {
   }
 
   toggleExerciseForm(): void {
+    // Only trainers or users can add exercises - clients cannot
+    if (this.auth.isClient()) {
+      this.snackbar.error('Clients cannot add exercises. Contact your trainer.');
+      return;
+    }
     this.showExerciseForm.set(!this.showExerciseForm());
     if (!this.showExerciseForm()) {
       this.resetExerciseForm();
@@ -157,6 +162,12 @@ export class WorkoutDetailComponent implements OnInit {
   }
 
   logExercise(): void {
+    // Only trainers or users can log exercises - clients cannot
+    if (this.auth.isClient()) {
+      this.snackbar.error('Clients cannot add exercises. Contact your trainer.');
+      return;
+    }
+    
     const currentSession = this.session();
     const exerciseId = this.selectedExerciseId();
 
@@ -213,6 +224,12 @@ export class WorkoutDetailComponent implements OnInit {
   }
 
   updateExerciseLog(log: ExerciseLog, field: string, value: any): void {
+    // Only trainers or users can update exercises - clients cannot
+    if (this.auth.isClient()) {
+      this.snackbar.error('Clients cannot edit exercises. Contact your trainer.');
+      return;
+    }
+    
     const updates: any = {};
     
     // Convert value to appropriate type
@@ -241,6 +258,12 @@ export class WorkoutDetailComponent implements OnInit {
   }
 
   deleteExerciseLog(logId: number): void {
+    // Only trainers or users can delete exercises - clients cannot
+    if (this.auth.isClient()) {
+      this.snackbar.error('Clients cannot delete exercises. Contact your trainer.');
+      return;
+    }
+    
     if (!confirm('Are you sure you want to delete this exercise log?')) return;
 
     this.workoutService.deleteExerciseLog(logId).subscribe({

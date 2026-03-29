@@ -1,0 +1,393 @@
+<div *ngIf="authService.isAuthenticated() && authService.isTrainer()" class="trainer-dashboard-container">
+  <h1>Trainer Dashboard</h1>
+
+  <div class="dashboard-grid">
+    <!-- Clients List -->
+    <div class="clients-panel">
+      <h2>Your Clients</h2>
+      <div class="clients-list">
+        <div
+          *ngIf="clients().length === 0"
+          class="empty-state"
+        >
+          <p>No clients assigned yet</p>
+        </div>
+        <button
+          *ngFor="let client of clients()"
+          [class.active]="selectedClient?.user_id === client.user_id"
+          (click)="selectClient(client)"
+          class="client-button"
+        >
+          {{ client.username }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="content-panel">
+      <!-- No Client Selected -->
+      <div *ngIf="!selectedClient" class="no-selection">
+        <p>Select a client to view and manage their workouts</p>
+      </div>
+
+      <!-- Client Selected -->
+      <ng-container *ngIf="selectedClient">
+        <div class="client-header">
+          <h2>{{ selectedClient.username }}'s Workouts</h2>
+          <button
+            (click)="toggleNewSessionForm()"
+            class="btn btn-primary"
+          >
+            {{ showNewSessionForm ? 'Cancel' : 'New Workout Session' }}
+          </button>
+        </div>
+
+        <!-- New Session Form -->
+        <div *ngIf="showNewSessionForm" class="form-card">
+          <h3>Create New Workout Session</h3>
+          <form [formGroup]="newSessionForm" (ngSubmit)="createNewSession()" class="form">
+            <div class="form-group">
+              <label for="session_date">Session Date</label>
+              <input
+                id="session_date"
+                type="date"
+                formControlName="session_date"
+                class="input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="trainer_note">Trainer Note</label>
+              <textarea
+                id="trainer_note"
+                formControlName="trainer_note"
+                class="textarea"
+                rows="3"
+                placeholder="Add notes about this session"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="duration_total_minutes">Total Duration (minutes)</label>
+              <input
+                id="duration_total_minutes"
+                type="number"
+                formControlName="duration_total_minutes"
+                class="input"
+                placeholder="e.g., 60"
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              Create Session
+            </button>
+          </form>
+        </div>
+
+        <!-- Workouts List -->
+        <div class="workouts-list">
+          <div
+            *ngIf="workoutSessions().length === 0"
+            class="empty-state"
+          >
+            <p>No workout sessions yet</p>
+          </div>
+
+          <div
+            *ngFor="let session of workoutSessions()"
+            [class.active]="selectedSession?.session_id === session.session_id"
+            (click)="selectSession(session)"
+            class="workout-card"
+          >
+            <div class="workout-header">
+              <strong>{{ session.session_date | date: 'MMM dd, yyyy' }}</strong>
+              <span *ngIf="session.duration_total_minutes" class="duration">
+                {{ session.duration_total_minutes }} min
+              </span>
+            </div>
+            <p *ngIf="session.trainer_note" class="note">{{ session.trainer_note }}</p>
+          </div>
+        </div>
+
+        <!-- Session Details -->
+        <div *ngIf="selectedSession" class="session-details">
+          <div class="session-header">
+            <h3>Session for {{ selectedSession.session_date | date: 'MMMM dd, yyyy' }}</h3>
+            <button
+              (click)="toggleNewExerciseForm()"
+              class="btn btn-secondary"
+            >
+              {{ showNewExerciseForm ? 'Cancel' : 'Add Exercise' }}
+            </button>
+          </div>
+
+          <!-- Session Editable Fields -->
+          <div class="editable-session">
+            <div class="form-group">
+              <label>Trainer Note</label>
+              <textarea
+                [(ngModel)]="selectedSession.trainer_note"
+                class="textarea"
+                rows="2"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Duration (minutes)</label>
+              <input
+                [(ngModel)]="selectedSession.duration_total_minutes"
+                type="number"
+                class="input"
+              />
+            </div>
+            <button (click)="updateSession()" class="btn btn-primary">
+              Update Session
+            </button>
+          </div>
+
+          <!-- New Exercise Form -->
+          <div *ngIf="showNewExerciseForm" class="form-card">
+            <h4>Add Exercise to Session</h4>
+
+            <!-- Muscle Group Filter -->
+            <div class="form-group">
+              <label for="muscle_group_filter">Filter by Muscle Group</label>
+              <select
+                id="muscle_group_filter"
+                [value]="selectedMuscleGroup"
+                (change)="filterExercisesByMuscleGroup($event)"
+                class="input"
+              >
+                <option value="">All Muscle Groups</option>
+                <option *ngFor="let group of muscleGroups()" [value]="group.muscle_group_id">
+                  {{ group.name }}
+                </option>
+              </select>
+            </div>
+
+            <form [formGroup]="newExerciseForm" (ngSubmit)="addExerciseToSession()" class="form">
+              <div class="form-group">
+                <label for="exercise_id">Exercise</label>
+                <select
+                  id="exercise_id"
+                  formControlName="exercise_id"
+                  class="input"
+                >
+                  <option value="">Select an exercise</option>
+                  <option *ngFor="let ex of filteredExercises()" [value]="ex.exercise_id">
+                    {{ ex.exercise_name }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sets">Sets</label>
+                  <input
+                    id="sets"
+                    type="number"
+                    formControlName="sets"
+                    class="input"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="reps">Reps</label>
+                  <input
+                    id="reps"
+                    type="number"
+                    formControlName="reps"
+                    class="input"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="weight_kg">Weight (kg)</label>
+                  <input
+                    id="weight_kg"
+                    type="number"
+                    step="0.5"
+                    formControlName="weight_kg"
+                    class="input"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="duration_minutes">Duration (minutes)</label>
+                <input
+                  id="duration_minutes"
+                  type="number"
+                  formControlName="duration_minutes"
+                  class="input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="trainer_note">Trainer Note</label>
+                <textarea
+                  id="trainer_note"
+                  formControlName="trainer_note"
+                  class="textarea"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                Add Exercise
+              </button>
+            </form>
+          </div>
+
+          <!-- Exercises List -->
+          <div class="exercises-list">
+            <h4>Exercises</h4>
+            <div
+              *ngIf="exerciseLogs().length === 0"
+              class="empty-state"
+            >
+              <p>No exercises added to this session</p>
+            </div>
+
+            <div
+              *ngFor="let log of exerciseLogs()"
+              class="exercise-card"
+            >
+              <div class="exercise-header">
+                <h5>{{ log.exercise_name }}</h5>
+                <span class="muscle-group">{{ log.muscle_group_name }}</span>
+              </div>
+
+              <div *ngIf="!showEditExerciseForm || editingLog?.log_id !== log.log_id" class="exercise-details">
+                <div *ngIf="log.sets" class="detail">
+                  <strong>Sets:</strong> {{ log.sets }}
+                </div>
+                <div *ngIf="log.reps" class="detail">
+                  <strong>Reps:</strong> {{ log.reps }}
+                </div>
+                <div *ngIf="log.weight_kg" class="detail">
+                  <strong>Weight:</strong> {{ log.weight_kg }} kg
+                </div>
+                <div *ngIf="log.duration_minutes" class="detail">
+                  <strong>Duration:</strong> {{ log.duration_minutes }} min
+                </div>
+                <div *ngIf="log.trainer_note" class="detail">
+                  <strong>Note:</strong> {{ log.trainer_note }}
+                </div>
+
+                <div class="exercise-actions">
+                  <button
+                    (click)="editExercise(log)"
+                    class="btn btn-secondary"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteExercise(log)"
+                    class="btn btn-danger"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <!-- Edit Form -->
+              <div *ngIf="showEditExerciseForm && editingLog?.log_id === log.log_id" class="edit-form">
+                <form [formGroup]="editExerciseForm" (ngSubmit)="updateExercise()" class="form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="edit_sets">Sets</label>
+                      <input
+                        id="edit_sets"
+                        type="number"
+                        formControlName="sets"
+                        class="input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="edit_reps">Reps</label>
+                      <input
+                        id="edit_reps"
+                        type="number"
+                        formControlName="reps"
+                        class="input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="edit_weight_kg">Weight (kg)</label>
+                      <input
+                        id="edit_weight_kg"
+                        type="number"
+                        step="0.5"
+                        formControlName="weight_kg"
+                        class="input"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="edit_duration_minutes">Duration (minutes)</label>
+                    <input
+                      id="edit_duration_minutes"
+                      type="number"
+                      formControlName="duration_minutes"
+                      class="input"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="edit_trainer_note">Trainer Note</label>
+                    <textarea
+                      id="edit_trainer_note"
+                      formControlName="trainer_note"
+                      class="textarea"
+                      rows="2"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelEditExercise()"
+                      class="btn btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- Authentication Required Screen -->
+<div *ngIf="!authService.isAuthenticated() || !authService.isTrainer()" class="flex flex-col items-center justify-center min-h-[80vh] bg-gray-50 p-6">
+  <div class="bg-white rounded-lg shadow-lg p-12 text-center max-w-md">
+    <!-- Lock Icon -->
+    <div class="mb-6 flex justify-center">
+      <div class="text-6xl">🔒</div>
+    </div>
+    
+    <h1 class="text-3xl font-bold text-gray-900 mb-4">Authentication Required</h1>
+    <p class="text-gray-600 text-lg mb-8">
+      You must be logged in as a trainer to access the trainer dashboard. Please log in or create an account to get started.
+    </p>
+    
+    <div class="flex flex-col gap-4">
+      <a 
+        routerLink="/login"
+        class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition cursor-pointer">
+        Log In
+      </a>
+      <a 
+        routerLink="/signup"
+        class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-md transition cursor-pointer">
+        Sign Up
+      </a>
+    </div>
+  </div>
+</div>

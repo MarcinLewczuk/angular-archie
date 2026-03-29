@@ -40,11 +40,13 @@
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-2xl font-bold text-gray-900">Exercises</h2>
-              <button 
-                (click)="toggleExerciseForm()"
-                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md cursor-pointer">
-                {{ showExerciseForm() ? '✕ Cancel' : '+ Add Exercise' }}
-              </button>
+              @if (!auth.isClient()) {
+                <button 
+                  (click)="toggleExerciseForm()"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md cursor-pointer">
+                  {{ showExerciseForm() ? '✕ Cancel' : '+ Add Exercise' }}
+                </button>
+              }
             </div>
 
             <!-- Exercise Input Form -->
@@ -122,16 +124,16 @@
               <div class="space-y-4">
                 @for (log of exerciseLogs(); track log.log_id) {
                   <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                    <div class="flex items-start justify-between mb-3">
-                      <p class="text-lg font-bold text-gray-900">{{ log.exercise_name }}</p>
-                      @if (log.created_by === 'user') {
-                        <button 
-                          (click)="deleteExerciseLog(log.log_id)"
-                          class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium text-sm rounded cursor-pointer">
-                          Delete
-                        </button>
-                      }
-                    </div>
+                  <div class="flex items-start justify-between mb-3">
+                    <p class="text-lg font-bold text-gray-900">{{ log.exercise_name }}</p>
+                    @if (!auth.isClient() && log.created_by === 'user') {
+                      <button 
+                        (click)="deleteExerciseLog(log.log_id)"
+                        class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium text-sm rounded cursor-pointer">
+                        Delete
+                      </button>
+                    }
+                  </div>
                     @if (log.trainer_note) {
                       <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
                         <p class="text-sm font-semibold text-blue-900 mb-1">Trainer Note:</p>
@@ -139,39 +141,43 @@
                       </div>
                     }
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p class="text-sm text-gray-600 mb-1">Sets</p>
-                        <input 
-                          type="number" 
-                          [value]="log.sets || ''"
-                          (change)="onExerciseFieldChange($event, log, 'sets')"
-                          class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      </div>
-                      <div>
-                        <p class="text-sm text-gray-600 mb-1">Reps</p>
-                        <input 
-                          type="number" 
-                          [value]="log.reps || ''"
-                          (change)="onExerciseFieldChange($event, log, 'reps')"
-                          class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      </div>
-                      <div>
-                        <p class="text-sm text-gray-600 mb-1">Weight (kg)</p>
-                        <input 
-                          type="number" 
-                          step="0.5"
-                          [value]="log.weight_kg || ''"
-                          (change)="onExerciseFieldChange($event, log, 'weight_kg')"
-                          class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      </div>
-                      <div>
-                        <p class="text-sm text-gray-600 mb-1">Duration (min)</p>
-                        <input 
-                          type="number" 
-                          [value]="log.duration_minutes || ''"
-                          (change)="onExerciseFieldChange($event, log, 'duration_minutes')"
-                          class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Sets</p>
+                      <input 
+                        type="number" 
+                        [value]="log.sets || ''"
+                        (change)="onExerciseFieldChange($event, log, 'sets')"
+                        [disabled]="auth.isClient()"
+                        class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Reps</p>
+                      <input 
+                        type="number" 
+                        [value]="log.reps || ''"
+                        (change)="onExerciseFieldChange($event, log, 'reps')"
+                        [disabled]="auth.isClient()"
+                        class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Weight (kg)</p>
+                      <input 
+                        type="number" 
+                        step="0.5"
+                        [value]="log.weight_kg || ''"
+                        (change)="onExerciseFieldChange($event, log, 'weight_kg')"
+                        [disabled]="auth.isClient()"
+                        class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Duration (min)</p>
+                      <input 
+                        type="number" 
+                        [value]="log.duration_minutes || ''"
+                        (change)="onExerciseFieldChange($event, log, 'duration_minutes')"
+                        [disabled]="auth.isClient()"
+                        class="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                    </div>
                     </div>
                   </div>
                 }

@@ -12,8 +12,13 @@
       </div>
       <nav class="flex items-center gap-4">
         @if (auth.isAuthenticated()) {
-          <span class="text-sm text-gray-600">{{ auth.currentUser?.username }}</span>
-          <a routerLink="/workouts" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Workouts</a>
+          <span class="text-sm text-gray-600">{{ auth.currentUser?.username }} ({{ auth.currentUser?.role }})</span>
+          @if (auth.isTrainer()) {
+            <a routerLink="/trainer-dashboard" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Trainer Dashboard</a>
+            <a routerLink="/exercise-management" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Exercise Management</a>
+          } @else {
+            <a routerLink="/workouts" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Workouts</a>
+          }
           <button 
             (click)="logout()"
             class="font-semibold inline-flex items-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md cursor-pointer">
